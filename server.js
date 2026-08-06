@@ -1742,10 +1742,20 @@ app.post("/admin/restart", { preHandler: basicAuth }, async (req, reply) => {
 // 测试 Bark
 // ========================
 app.get("/test-bark", async (req, reply) => {
-  const formattedTime = formatDateTimeInTimeZone(new Date(), TIME_ZONE);
-  appendSpecialEvent(`（${formattedTime} 刚刚给用户发了 Bark：这是一条测试推送。）`);
-  reply.send({ success: true });
+  const barkKey = config.bark_key || process.env.BARK_KEY;
+  if (!barkKey) {
+    return reply.send({ success: false, error: "未配置 Bark Key" });
+  }
+  try {
+    const url = `https://api.day.app/${barkKey}/测试推送/这是一条来自朔的测试消息`;
+    const res = await fetch(url);
+    const data = await res.json();
+    reply.send({ success: true, bark_response: data });
+  } catch (e) {
+    reply.send({ success: false, error: e.message });
+  }
 });
+
 
 // ========================
 // 启动服务
