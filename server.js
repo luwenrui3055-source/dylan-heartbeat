@@ -1,3 +1,6 @@
+process.env.DAY_WAKE_AFTER_MINUTES = '1';
+process.env.DAY_CHECK_INTERVAL_MINUTES = '1';
+
 process.env.BARK_KEY = 'ga9SV7GU3jDrqpAbVrdjkC';
 process.env.PUSH_PROVIDER = 'bark';
 process.env.TARGET_API_URL = 'https://ckffai.com/v1/chat/completions';
