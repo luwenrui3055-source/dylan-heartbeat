@@ -10,7 +10,7 @@ process.env.ADMIN_USER = 'admin';
 process.env.ADMIN_PASSWORD = 'saku123';
 process.env.PORT = '8080';
 
-require("dotenv").config();
+require('dotenv').config({ override: false })
 
 const Fastify = require("fastify");
 const fs = require("fs-extra");
