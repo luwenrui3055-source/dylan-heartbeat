@@ -1742,7 +1742,7 @@ app.post("/admin/restart", { preHandler: basicAuth }, async (req, reply) => {
 // 测试 Bark
 // ========================
 app.get("/test-bark", async (req, reply) => {
-  const barkKey = config.bark_key || process.env.BARK_KEY;
+  const barkKey = process.env.BARK_KEY;
   if (!barkKey) {
     return reply.send({ success: false, error: "未配置 Bark Key" });
   }
