@@ -24,7 +24,7 @@ const app = Fastify({
 
 app.register(require("@fastify/formbody"));
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 8080
 const TARGET_API_URL = process.env.TARGET_API_URL;
 const TIME_ZONE = resolveTimeZone();
 const IS_RAILWAY_RUNTIME = Boolean(
