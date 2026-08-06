@@ -1,5 +1,5 @@
 process.env.DAY_WAKE_AFTER_MINUTES = '30';
-process.env.DAY_CHECK_INTERVAL_MINUTES = '30';
+process.env.DAY_CHECK_INTERVAL_MINUTES = '10';
 
 process.env.BARK_KEY = 'ga9SV7GU3jDrqpAbVrdjkC';
 process.env.PUSH_PROVIDER = 'bark';
