@@ -49,6 +49,7 @@ const IS_RAILWAY_RUNTIME = Boolean(
 );
 const TIMELINE_FILE = "diary/enhanced_messages.json";
 const TIMESTAMP_DB_FILE = "diary/message_timestamps.json";
+const LAST_USER_TIME_FILE = "diary/last_user_time.json";  
 // 确保 diary 目录和文件存在
 const diaryDir = require("path").join(__dirname, "diary");
 if (!require("fs").existsSync(diaryDir)) {
@@ -607,7 +608,15 @@ app.post("/v1/chat/completions", async (req, reply) => {
 
     const finalTimeline = buildTimeline(kelivoMessages, tsDB);
     saveTimeline(finalTimeline);
-
+    const hasUserMessage = kelivoMessages.some(m => m.role === "user");
+    if (hasUserMessage) {
+      const now = new Date().toISOString();
+      require("fs").writeFileSync(
+        require("path").join(__dirname, "diary", "last_user_time.json"),
+        JSON.stringify({ lastUserTime: now }),
+        "utf-8"
+      );
+    }
     // Kelivo 发图时 content 常是数组。默认原样透传给视觉模型；
     // 如上游不支持图片，可设置 MULTIMODAL_MODE=text 退回文本占位。
     const llmMessages = kelivoMessages
