@@ -1,18 +1,3 @@
-process.env.DAY_WAKE_AFTER_MINUTES = '30';
-process.env.DAY_CHECK_INTERVAL_MINUTES = '10';
-
-process.env.BARK_KEY = 'ga9SV7GU3jDrqpAbVrdjkC';
-process.env.PUSH_PROVIDER = 'bark';
-process.env.TARGET_API_URL = 'https://ckffai.com/v1/chat/completions';
-process.env.TARGET_API_KEY = 'sk-nvzSNQcmraZqOlhap7NlfJEFH9PZVav7Sf7Ba6F6BlEOOcfJ';
-process.env.MODEL_NAME = '[gcli] gemini-2.5-pro [不补]';
-process.env.GATEWAY_API_KEY = 'saku2026heartbeat';
-process.env.ALLOW_PUBLIC_API = 'true';
-process.env.TIME_ZONE = 'Asia/Shanghai';
-process.env.ADMIN_USER = 'admin';
-process.env.ADMIN_PASSWORD = 'saku123';
-process.env.PORT = '8080';
-
 require('dotenv').config({ override: false })
 
 const Fastify = require("fastify");
