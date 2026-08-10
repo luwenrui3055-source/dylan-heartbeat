@@ -430,7 +430,7 @@ async function runWakeUp() {
   const messages = loadTimelineMessages();
   if (!messages) return;
 
-  const lastUserTime = getLastUserTime(messages);
+ const lastUserTime = await getLastUserTime(messages);
   if (!lastUserTime) {
     console.log("未找到用户时间");
     return;
