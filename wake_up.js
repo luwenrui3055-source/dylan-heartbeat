@@ -329,8 +329,31 @@ function parseTimelineTimestamp(value) {
   return zonedWallTimeToDate({ year: yyyy, month, day, hour, minute }, TIME_ZONE);
 }
 
-function getLastUserTime(messages) {
-  // 优先从独立文件读取
+async function getLastUserTime(messages) {
+  // 优先从 xiaoke API 获取
+  try {
+    const response = await fetch('https://saku-change.zeabur.app/internal/timeline?limit=20', {
+      headers: { 'Authorization': 'Bearer saku123' }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      const records = data.records || [];
+      for (const record of records) {
+        if (record.role === 'user' && record.content) {
+          const match = record.content.match(/^(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
+          if (match) {
+            const dateStr = `${match[1]}T${match[2]}:00`;
+            console.log('从 xiaoke 获取到用户时间:', dateStr);
+            return new Date(dateStr);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.log('xiaoke 获取失败，回退本地:', err.message);
+  }
+
+  // 回退：从独立文件读取
   const lastTimeFile = path.join(__dirname, "diary", "last_user_time.json");
   if (fs.existsSync(lastTimeFile)) {
     try {
@@ -340,8 +363,8 @@ function getLastUserTime(messages) {
       }
     } catch {}
   }
-  
-  // 回退：从消息内容解析时间戳（保留旧逻辑）
+
+  // 最后回退：从消息内容解析
   const reversed = [...messages].reverse();
   for (const msg of reversed) {
     if (msg.role === "user") {
