@@ -339,13 +339,9 @@ async function getLastUserTime(messages) {
       const data = await response.json();
       const records = data.records || [];
       for (const record of records) {
-        if (record.role === 'user' && record.content) {
-          const match = record.content.match(/^(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
-          if (match) {
-            const dateStr = `${match[1]}T${match[2]}:00`;
-            console.log('从 xiaoke 获取到用户时间:', dateStr);
-            return new Date(dateStr);
-          }
+        if (record.role === 'user' && record.created_at) {
+          console.log('从 xiaoke 获取到用户时间:', record.created_at);
+          return new Date(record.created_at);
         }
       }
     }
@@ -375,7 +371,6 @@ async function getLastUserTime(messages) {
   }
   return null;
 }
-
 
 function stripPosition(messages) {
   return messages.map(({ position, ...rest }) => rest);
