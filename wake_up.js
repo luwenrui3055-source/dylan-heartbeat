@@ -449,6 +449,10 @@ async function runWakeUp() {
       const c = normalizeContentToText(msg.content);
       return !c.includes("<memories>") && !c.includes("记忆库使用策略");
     })
+    .join("\n\n");
+
+    console.log("本地历史字符数:", historyText.length);
+
     .map(msg => {
       const userDisplay = process.env.USER_DISPLAY_NAME || "用户";
       const aiDisplay = process.env.AI_DISPLAY_NAME || "AI";
