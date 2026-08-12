@@ -409,34 +409,6 @@ async function getLastUserTime(messages) {
     console.log('❌ xiaoke 请求异常:', err.message);
   }
   
-  // 回退：从独立文件读取
-  console.log('🔄 尝试从本地文件获取...');
-  const lastTimeFile = path.join(__dirname, "diary", "last_user_time.json");
-  
-  if (fs.existsSync(lastTimeFile)) {
-    console.log('📁 找到本地时间文件');
-    try {
-      const data = JSON.parse(fs.readFileSync(lastTimeFile, "utf-8"));
-      if (data.lastUserTime) {
-        console.log('✅ 从本地文件获取用户时间:', data.lastUserTime);
-        return new Date(data.lastUserTime);
-      } else {
-        console.log('❌ 本地文件中没有 lastUserTime 字段');
-      }
-    } catch (err) {
-      console.log('❌ 读取本地文件失败:', err.message);
-    }
-  } else {
-    console.log('❌ 本地时间文件不存在:', lastTimeFile);
-  }
-  
-  // 最后回退：从消息内容解析
-  console.log('🔄 尝试从消息内容解析时间...');
-  if (!messages || !Array.isArray(messages)) {
-    console.log('❌ messages 无效:', typeof messages);
-    return null;
-  }
-  
   console.log('📝 messages 数量:', messages.length);
   const reversed = [...messages].reverse();
   for (const msg of reversed) {
