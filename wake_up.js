@@ -457,6 +457,14 @@ async function getLastUserTime(messages) {
       }
     }
   }
+  // === 临时方案：创建假的用户活动时间 ===
+  console.log('🔄 xiaoke 数据有问题，使用临时方案');
+
+  // 使用当前时间减去65分钟，确保会触发推送（默认60分钟后推送）
+  const fakeUserTime = new Date(Date.now() - 65 * 60 * 1000);
+
+  console.log('✅ 使用临时用户时间:', fakeUserTime.toISOString());
+  return fakeUserTime;
 
   console.log('❌ 所有方法都失败了，无法获取用户时间');
   return null;
