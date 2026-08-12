@@ -375,51 +375,36 @@ async function getXiaokeHistory(limit = 20) {
   }
 }
 
-async function getLastUserTime(messages) {
-  console.log('🔍 开始获取用户时间...');
+async function getLastUserTime() {
+  console.log('🔍 从 xiaoke 获取最近用户活动时间...');
   
-  // 优先从 xiaoke API 获取
   try {
-    console.log('📡 正在调用 xiaoke API...');
-    const response = await fetch('https://saku-change.zeabur.app/internal/timeline?limit=20', {
+    const response = await fetch('https://saku-change.zeabur.app/internal/timeline?limit=50', {
       headers: { 'Authorization': 'Bearer saku123' }
     });
     
-    console.log('📊 xiaoke API 响应状态:', response.status, response.ok);
+    console.log('📊 xiaoke API 响应状态:', response.status);
     
     if (response.ok) {
       const data = await response.json();
       const records = data.records || [];
       
       console.log('📋 获取到记录数量:', records.length);
-      console.log('📄 前3条记录角色:', records.slice(0, 3).map(r => `${r.role}@${r.created_at}`));
       
+      // 从最新记录开始查找用户消息
       for (const record of records) {
         if (record.role === 'user' && record.created_at) {
-          console.log('✅ 找到用户时间:', record.created_at);
+          console.log('✅ 找到用户最后活动时间:', record.created_at);
           return new Date(record.created_at);
         }
       }
       
-      console.log('❌ 20条记录中没有找到用户消息');
+      console.log('❌ 在', records.length, '条记录中没有找到用户消息');
     } else {
-      console.log('❌ xiaoke API 响应失败:', response.status);
+      console.log('❌ xiaoke API 请求失败:', response.status);
     }
   } catch (err) {
     console.log('❌ xiaoke 请求异常:', err.message);
-  }
-  
-  console.log('📝 messages 数量:', messages.length);
-  const reversed = [...messages].reverse();
-  for (const msg of reversed) {
-    if (msg.role === "user") {
-      const content = normalizeContentToText(msg.content);
-      const parsed = parseTimelineTimestamp(content);
-      if (parsed) {
-        console.log('✅ 从消息内容解析到时间:', parsed);
-        return parsed;
-      }
-    }
   }
   
   console.log('❌ 所有方法都失败了，无法获取用户时间');
