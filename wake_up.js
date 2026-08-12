@@ -22,36 +22,43 @@ const DIARY_DIR_PATH = path.isAbsolute(DIARY_DIR_NAME)
   ? DIARY_DIR_NAME
   : path.join(__dirname, DIARY_DIR_NAME);
 
-async function recordPushToTimeline(eventContent) {  // ← 添加 async
+function recordPushToTimeline(eventContent) {
   try {
-    console.log("🔵 开始记录推送到 xiaoke 数据库");
+    // 确保 diary 目录存在
+    fs.mkdirSync(path.dirname(TIMELINE_PATH), { recursive: true });
     
-    // 不再写入本地文件，而是调用 xiaoke 的事件接口
-    const xiaokeResponse = await fetch('https://saku-change.zeabur.app/internal/events', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer saku123',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        content: eventContent
-      })
-    });
-    
-    if (xiaokeResponse.ok) {
-      console.log("✅ 推送记录已写入 xiaoke 数据库");
-      return true;
-    } else {
-      console.log("❌ xiaoke 数据库写入失败");
-      return false;
+    // 读取现有时间线
+    let timeline = [];
+    if (fs.existsSync(TIMELINE_PATH)) {
+      const content = fs.readFileSync(TIMELINE_PATH, "utf-8");
+      timeline = JSON.parse(content);
     }
+    
+    // 添加推送记录
+    const pushRecord = {
+      role: "assistant",
+      content: eventContent,
+      position: timeline.length + 0.1 // 确保在最新位置
+    };
+    
+    timeline.push(pushRecord);
+    
+    // 保持文件大小，只保留最近 50 条（保护系统消息）
+    if (timeline.length > 50) {
+      const systemMsg = timeline.find(m => m.role === "system");
+      const recent = timeline.slice(-49);
+      timeline = systemMsg ? [systemMsg, ...recent] : recent;
+    }
+    
+    // 写回文件
+    fs.writeFileSync(TIMELINE_PATH, JSON.stringify(timeline, null, 2), "utf-8");
+    console.log("✅ 推送记录已写入时间线");
+    return true;
   } catch (err) {
-    console.error("❌ 记录推送到 xiaoke 失败:", err.message);
+    console.error("❌ 记录推送到时间线失败:", err.message);
     return false;
   }
 }
-
-
 
 function readNumberEnv(key, fallback, options = {}) {
   const value = Number(process.env[key]);
@@ -375,41 +382,25 @@ async function getXiaokeHistory(limit = 20) {
   }
 }
 
-async function getLastUserTime() {
-  console.log('🔍 从 xiaoke 获取最近用户活动时间...');
-  
+async function getLastUserTime(messages) {
+  // 优先从 xiaoke API 获取
   try {
-    const response = await fetch('https://saku-change.zeabur.app/internal/timeline?limit=50', {
+    const response = await fetch('https://saku-change.zeabur.app/internal/timeline?limit=20', {
       headers: { 'Authorization': 'Bearer saku123' }
     });
-    
-    console.log('📊 xiaoke API 响应状态:', response.status);
-    
     if (response.ok) {
       const data = await response.json();
       const records = data.records || [];
-      
-      console.log('📋 获取到记录数量:', records.length);
-      
-      // 从最新记录开始查找用户消息
       for (const record of records) {
         if (record.role === 'user' && record.created_at) {
-          console.log('✅ 找到用户最后活动时间:', record.created_at);
+          console.log('从 xiaoke 获取到用户时间:', record.created_at);
           return new Date(record.created_at);
         }
       }
-      
-      console.log('❌ 在', records.length, '条记录中没有找到用户消息');
-    } else {
-      console.log('❌ xiaoke API 请求失败:', response.status);
     }
   } catch (err) {
-    console.log('❌ xiaoke 请求异常:', err.message);
+    console.log('xiaoke 获取失败，回退本地:', err.message);
   }
-  
-  console.log('❌ 所有方法都失败了，无法获取用户时间');
-  return null;
-}
 
   // 回退：从独立文件读取
   const lastTimeFile = path.join(__dirname, "diary", "last_user_time.json");
@@ -697,7 +688,7 @@ ${historyText}`
   }
 
   // 优先写入本地时间线，确保朔能看到推送记忆
-const localSuccess = await recordPushToTimeline(eventContent);
+const localSuccess = recordPushToTimeline(eventContent);
 
 // 同时尝试通过 Gateway 记录（作为备用）
 try {
