@@ -437,10 +437,14 @@ async function runWakeUp() {
   console.log("开始自动唤醒");
   console.log("==========================\n");
 
+  // 优先获取 xiaoke 最新记录
+  const xiaokeRecords = await getXiaokeHistory(30);
+  
+  // 本地文件作为回退
   const messages = loadTimelineMessages();
-  if (!messages) return;
+  if (!messages && xiaokeRecords.length === 0) return;
 
- const lastUserTime = await getLastUserTime(messages);
+  const lastUserTime = await getLastUserTime(messages);
   if (!lastUserTime) {
     console.log("未找到用户时间");
     return;
@@ -458,13 +462,32 @@ async function runWakeUp() {
   const wakePrompt = buildWakePrompt(getChinaTimeString(), diffMinutes, weatherContext);
   const cleanMessages = stripPosition(messages);
 
-  const historyText = cleanMessages
+  // 优先使用 xiaoke 最新记录
+let historyText = "";
+
+if (xiaokeRecords.length > 0) {
+  console.log("使用 xiaoke 记录，条数:", xiaokeRecords.length);
+  
+  historyText = xiaokeRecords
+    .filter(record => record.role === "user" || record.role === "assistant")
+    .slice().reverse()  // 按时间正序
+    .map(record => {
+      const role = record.role === "user" ? "小猫" : "朔";
+      const content = normalizeContentToText(record.content).trim();
+      return content ? `[${role}] ${content}` : "";
+    })
+    .filter(Boolean)
+    .join("\n\n");
+} else {
+  console.log("xiaoke 记录为空，使用本地文件");
+  
+  // 保留原来的本地文件处理逻辑
+  historyText = cleanMessages
     .filter(msg => msg.role !== "system")
     .filter(msg => {
       const c = normalizeContentToText(msg.content);
       return !c.includes("<memories>") && !c.includes("记忆库使用策略");
     })
-    
     .map(msg => {
       const userDisplay = process.env.USER_DISPLAY_NAME || "用户";
       const aiDisplay = process.env.AI_DISPLAY_NAME || "AI";
@@ -476,7 +499,11 @@ async function runWakeUp() {
       return `[${role}] ${content}`;
     })
     .join("\n\n");
+}
 
+console.log("历史记录字符数:", historyText.length);
+
+  
   const baseSystemPrompt = cleanMessages.find(msg => msg.role === "system");
   const cleanSP = baseSystemPrompt 
     ? normalizeContentToText(baseSystemPrompt.content).split("## Memories")[0].trim()
