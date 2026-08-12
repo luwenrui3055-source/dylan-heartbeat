@@ -681,7 +681,7 @@ ${historyText}`
   }
 
   // 优先写入本地时间线，确保朔能看到推送记忆
-const localSuccess = recordPushToTimeline(eventContent);
+const localSuccess = await recordPushToTimeline(eventContent);
 
 // 同时尝试通过 Gateway 记录（作为备用）
 try {
