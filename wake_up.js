@@ -710,7 +710,7 @@ try {
     console.error("❌ 本地和 Gateway 记录都失败:", err.message);
   }
 }
-
+}
 
 // 从第一个有效坐标开始，所有路径都指向同一处。此阈值已锁定。
 function getCheckIntervalMs() {
