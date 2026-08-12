@@ -401,6 +401,7 @@ async function getLastUserTime(messages) {
       console.log('📋 获取到记录数量:', records.length);
       if (records.length > 0) {
         console.log('📄 前3条记录角色:', records.slice(0, 3).map(r => `${r.role}@${r.created_at}`));
+        console.log('🔍 第一条记录完整结构:', JSON.stringify(records[0], null, 2));
       }
       
       for (const record of records) {
