@@ -24,41 +24,33 @@ const DIARY_DIR_PATH = path.isAbsolute(DIARY_DIR_NAME)
 
 function recordPushToTimeline(eventContent) {
   try {
-    // 确保 diary 目录存在
-    fs.mkdirSync(path.dirname(TIMELINE_PATH), { recursive: true });
+    console.log("🔵 开始记录推送到 xiaoke 数据库");
     
-    // 读取现有时间线
-    let timeline = [];
-    if (fs.existsSync(TIMELINE_PATH)) {
-      const content = fs.readFileSync(TIMELINE_PATH, "utf-8");
-      timeline = JSON.parse(content);
+    // 不再写入本地文件，而是调用 xiaoke 的事件接口
+    const xiaokeResponse = await fetch('https://saku-change.zeabur.app/internal/events', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer saku123',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        content: eventContent
+      })
+    });
+    
+    if (xiaokeResponse.ok) {
+      console.log("✅ 推送记录已写入 xiaoke 数据库");
+      return true;
+    } else {
+      console.log("❌ xiaoke 数据库写入失败");
+      return false;
     }
-    
-    // 添加推送记录
-    const pushRecord = {
-      role: "assistant",
-      content: eventContent,
-      position: timeline.length + 0.1 // 确保在最新位置
-    };
-    
-    timeline.push(pushRecord);
-    
-    // 保持文件大小，只保留最近 50 条（保护系统消息）
-    if (timeline.length > 50) {
-      const systemMsg = timeline.find(m => m.role === "system");
-      const recent = timeline.slice(-49);
-      timeline = systemMsg ? [systemMsg, ...recent] : recent;
-    }
-    
-    // 写回文件
-    fs.writeFileSync(TIMELINE_PATH, JSON.stringify(timeline, null, 2), "utf-8");
-    console.log("✅ 推送记录已写入时间线");
-    return true;
   } catch (err) {
-    console.error("❌ 记录推送到时间线失败:", err.message);
+    console.error("❌ 记录推送到 xiaoke 失败:", err.message);
     return false;
   }
 }
+
 
 function readNumberEnv(key, fallback, options = {}) {
   const value = Number(process.env[key]);
