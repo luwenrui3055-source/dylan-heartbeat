@@ -22,6 +22,44 @@ const DIARY_DIR_PATH = path.isAbsolute(DIARY_DIR_NAME)
   ? DIARY_DIR_NAME
   : path.join(__dirname, DIARY_DIR_NAME);
 
+function recordPushToTimeline(eventContent) {
+  try {
+    // 确保 diary 目录存在
+    fs.mkdirSync(path.dirname(TIMELINE_PATH), { recursive: true });
+    
+    // 读取现有时间线
+    let timeline = [];
+    if (fs.existsSync(TIMELINE_PATH)) {
+      const content = fs.readFileSync(TIMELINE_PATH, "utf-8");
+      timeline = JSON.parse(content);
+    }
+    
+    // 添加推送记录
+    const pushRecord = {
+      role: "assistant",
+      content: eventContent,
+      position: timeline.length + 0.1 // 确保在最新位置
+    };
+    
+    timeline.push(pushRecord);
+    
+    // 保持文件大小，只保留最近 50 条（保护系统消息）
+    if (timeline.length > 50) {
+      const systemMsg = timeline.find(m => m.role === "system");
+      const recent = timeline.slice(-49);
+      timeline = systemMsg ? [systemMsg, ...recent] : recent;
+    }
+    
+    // 写回文件
+    fs.writeFileSync(TIMELINE_PATH, JSON.stringify(timeline, null, 2), "utf-8");
+    console.log("✅ 推送记录已写入时间线");
+    return true;
+  } catch (err) {
+    console.error("❌ 记录推送到时间线失败:", err.message);
+    return false;
+  }
+}
+
 function readNumberEnv(key, fallback, options = {}) {
   const value = Number(process.env[key]);
   const min = options.min ?? -Infinity;
@@ -649,20 +687,30 @@ ${historyText}`
     }
   }
 
-  try {
-    const eventResponse = await fetch(GATEWAY_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: eventContent })
-    });
-    if (!eventResponse.ok) {
-      throw new Error(`Gateway 返回 HTTP ${eventResponse.status}`);
-    }
-    console.log("\n已通过 Gateway 记录唤醒事件\n");
-  } catch (err) {
-    console.error("\n记录唤醒事件失败（Gateway 是否运行？）:\n", err.message);
+  // 优先写入本地时间线，确保朔能看到推送记忆
+const localSuccess = recordPushToTimeline(eventContent);
+
+// 同时尝试通过 Gateway 记录（作为备用）
+try {
+  const eventResponse = await fetch(GATEWAY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: eventContent })
+  });
+  
+  if (eventResponse.ok) {
+    console.log("✅ 同时已通过 Gateway 记录");
+  } else {
+    console.log("⚠️ Gateway 记录失败，但本地记录成功");
+  }
+} catch (err) {
+  if (localSuccess) {
+    console.log("⚠️ Gateway 不可达，但本地记录成功");
+  } else {
+    console.error("❌ 本地和 Gateway 记录都失败:", err.message);
   }
 }
+
 
 // 从第一个有效坐标开始，所有路径都指向同一处。此阈值已锁定。
 function getCheckIntervalMs() {
