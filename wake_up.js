@@ -22,7 +22,7 @@ const DIARY_DIR_PATH = path.isAbsolute(DIARY_DIR_NAME)
   ? DIARY_DIR_NAME
   : path.join(__dirname, DIARY_DIR_NAME);
 
-function recordPushToTimeline(eventContent) {
+async function recordPushToTimeline(eventContent) {  // ← 添加 async
   try {
     console.log("🔵 开始记录推送到 xiaoke 数据库");
     
@@ -50,6 +50,7 @@ function recordPushToTimeline(eventContent) {
     return false;
   }
 }
+
 
 
 function readNumberEnv(key, fallback, options = {}) {
