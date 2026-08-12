@@ -376,24 +376,83 @@ async function getXiaokeHistory(limit = 20) {
 }
 
 async function getLastUserTime(messages) {
+  console.log('🔍 开始获取用户时间...');
+  
   // 优先从 xiaoke API 获取
   try {
+    console.log('📡 正在调用 xiaoke API...');
     const response = await fetch('https://saku-change.zeabur.app/internal/timeline?limit=20', {
       headers: { 'Authorization': 'Bearer saku123' }
     });
+    
+    console.log('📊 xiaoke API 响应状态:', response.status, response.ok);
+    
     if (response.ok) {
       const data = await response.json();
       const records = data.records || [];
+      
+      console.log('📋 获取到记录数量:', records.length);
+      console.log('📄 前3条记录角色:', records.slice(0, 3).map(r => `${r.role}@${r.created_at}`));
+      
       for (const record of records) {
         if (record.role === 'user' && record.created_at) {
-          console.log('从 xiaoke 获取到用户时间:', record.created_at);
+          console.log('✅ 找到用户时间:', record.created_at);
           return new Date(record.created_at);
         }
       }
+      
+      console.log('❌ 20条记录中没有找到用户消息');
+    } else {
+      console.log('❌ xiaoke API 响应失败:', response.status);
     }
   } catch (err) {
-    console.log('xiaoke 获取失败，回退本地:', err.message);
+    console.log('❌ xiaoke 请求异常:', err.message);
   }
+  
+  // 回退：从独立文件读取
+  console.log('🔄 尝试从本地文件获取...');
+  const lastTimeFile = path.join(__dirname, "diary", "last_user_time.json");
+  
+  if (fs.existsSync(lastTimeFile)) {
+    console.log('📁 找到本地时间文件');
+    try {
+      const data = JSON.parse(fs.readFileSync(lastTimeFile, "utf-8"));
+      if (data.lastUserTime) {
+        console.log('✅ 从本地文件获取用户时间:', data.lastUserTime);
+        return new Date(data.lastUserTime);
+      } else {
+        console.log('❌ 本地文件中没有 lastUserTime 字段');
+      }
+    } catch (err) {
+      console.log('❌ 读取本地文件失败:', err.message);
+    }
+  } else {
+    console.log('❌ 本地时间文件不存在:', lastTimeFile);
+  }
+  
+  // 最后回退：从消息内容解析
+  console.log('🔄 尝试从消息内容解析时间...');
+  if (!messages || !Array.isArray(messages)) {
+    console.log('❌ messages 无效:', typeof messages);
+    return null;
+  }
+  
+  console.log('📝 messages 数量:', messages.length);
+  const reversed = [...messages].reverse();
+  for (const msg of reversed) {
+    if (msg.role === "user") {
+      const content = normalizeContentToText(msg.content);
+      const parsed = parseTimelineTimestamp(content);
+      if (parsed) {
+        console.log('✅ 从消息内容解析到时间:', parsed);
+        return parsed;
+      }
+    }
+  }
+  
+  console.log('❌ 所有方法都失败了，无法获取用户时间');
+  return null;
+}
 
   // 回退：从独立文件读取
   const lastTimeFile = path.join(__dirname, "diary", "last_user_time.json");
