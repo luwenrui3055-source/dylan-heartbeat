@@ -328,6 +328,21 @@ function parseTimelineTimestamp(value) {
   const [, yyyy, , month, day, hour, minute] = match;
   return zonedWallTimeToDate({ year: yyyy, month, day, hour, minute }, TIME_ZONE);
 }
+async function getXiaokeHistory(limit = 20) {
+  try {
+    const response = await fetch('https://saku-change.zeabur.app/internal/timeline?limit=' + limit, {
+      headers: { 'Authorization': 'Bearer saku123' }
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    return Array.isArray(data.records) ? data.records : [];
+  } catch (err) {
+    console.log('获取 xiaoke 历史失败:', err.message);
+    return [];
+  }
+}
 
 async function getLastUserTime(messages) {
   // 优先从 xiaoke API 获取
