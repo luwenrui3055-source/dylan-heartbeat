@@ -22,7 +22,45 @@ const DIARY_DIR_PATH = path.isAbsolute(DIARY_DIR_NAME)
   ? DIARY_DIR_NAME
   : path.join(__dirname, DIARY_DIR_NAME);
 
-function recordPushToTimeline(eventContent) {
+async function recordPushToTimeline(eventContent) {
+  try {
+    console.log("🔵 写入推送记录到 xiaoke");
+    
+    const response = await fetch('https://saku-change.zeabur.app/internal/events', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer saku123',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        content: eventContent
+      })
+    });
+    
+    console.log("📊 xiaoke events API 响应:", response.status);
+    
+    if (response.ok) {
+      const result = await response.json();
+      console.log("✅ 推送记录写入 xiaoke 成功，event_id:", result.event_id);
+      return true;
+    } else {
+      const error = await response.text();
+      console.log("❌ xiaoke events API 失败:", error);
+      
+      // 回退到本地文件
+      console.log("🔄 回退到本地文件写入...");
+      return fallbackToLocalFile(eventContent);
+    }
+  } catch (err) {
+    console.error("❌ xiaoke events API 异常:", err.message);
+    
+    // 回退到本地文件
+    console.log("🔄 回退到本地文件写入...");
+    return fallbackToLocalFile(eventContent);
+  }
+}
+
+function fallbackToLocalFile(eventContent) {
   try {
     // 确保 diary 目录存在
     fs.mkdirSync(path.dirname(TIMELINE_PATH), { recursive: true });
@@ -38,12 +76,11 @@ function recordPushToTimeline(eventContent) {
     const pushRecord = {
       role: "assistant",
       content: eventContent,
-      position: timeline.length + 0.1 // 确保在最新位置
+      position: timeline.length + 0.1
     };
-    
     timeline.push(pushRecord);
     
-    // 保持文件大小，只保留最近 50 条（保护系统消息）
+    // 保持文件大小，只保留最近 50 条
     if (timeline.length > 50) {
       const systemMsg = timeline.find(m => m.role === "system");
       const recent = timeline.slice(-49);
@@ -52,10 +89,10 @@ function recordPushToTimeline(eventContent) {
     
     // 写回文件
     fs.writeFileSync(TIMELINE_PATH, JSON.stringify(timeline, null, 2), "utf-8");
-    console.log("✅ 推送记录已写入时间线");
+    console.log("✅ 推送记录已写入本地文件（备份）");
     return true;
   } catch (err) {
-    console.error("❌ 记录推送到时间线失败:", err.message);
+    console.error("❌ 本地文件写入也失败:", err.message);
     return false;
   }
 }
@@ -733,7 +770,8 @@ ${historyText}`
   }
 
   // 优先写入本地时间线，确保朔能看到推送记忆
-const localSuccess = recordPushToTimeline(eventContent);
+const localSuccess = await recordPushToTimeline(eventContent);
+
 
 // 同时尝试通过 Gateway 记录（作为备用）
 try {
