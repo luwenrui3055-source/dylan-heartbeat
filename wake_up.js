@@ -668,7 +668,7 @@ ${historyText}`
       Authorization: `Bearer ${process.env.TARGET_API_KEY}`
     },
     body: JSON.stringify({
-      model: "[反重力][次] gemini-3.5-flash [不补]",
+      model: "[gcli][假流] gemini-3.5-flash [不补]",
       messages: wakeMessages,
       temperature: 0.8,
       top_p: 0.95,
