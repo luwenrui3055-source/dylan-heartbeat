@@ -661,6 +661,8 @@ ${historyText}`
     return;
   }
 
+  console.log("🔑 使用密钥前缀:", process.env.TARGET_API_KEY?.slice(0, 10));
+  console.log("🌐 请求URL:", process.env.TARGET_API_URL);
   const response = await fetch(process.env.TARGET_API_URL, {
     method: "POST",
     headers: {
