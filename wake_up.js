@@ -425,8 +425,9 @@ async function getLastUserTime(messages) {
   // 优先从 xiaoke API 获取
   try {
     console.log('📡 正在调用 xiaoke API...');
-    const response = await fetch('https://saku-change.zeabur.app/internal/timeline?limit=20', {
-      headers: { 'Authorization': 'Bearer saku123' }
+    const xiaokeBase = process.env.XIAOKE_BASE_URL || 'https://saku-change.zeabur.app';
+    const response = await fetch(`${xiaokeBase}/internal/timeline?limit=20`, {
+      headers: { 'Authorization': `Bearer ${process.env.XIAOKE_API_KEY || 'saku123'}` }
     });
     
     console.log('📊 xiaoke API 响应状态:', response.status, response.ok);
