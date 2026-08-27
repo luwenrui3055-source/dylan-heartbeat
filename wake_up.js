@@ -608,12 +608,19 @@ if (xiaokeRecords.length > 0) {
   for (let i = allEntries.length - 1; i >= 0; i--) {
     const entryLen = allEntries[i].length + 2;
     if (totalChars + entryLen > MAX_HISTORY_CHARS) {
-      console.log(`📏 达字符预算 ${MAX_HISTORY_CHARS}，保留最新 ${trimmed.length} 条，丢弃更早的 ${i + 1} 条`);
+      if (trimmed.length === 0) {
+        trimmed.unshift(allEntries[i].slice(-MAX_HISTORY_CHARS));
+        console.log(`📏 最新一条超预算(${entryLen}字符)，截断保留最后${MAX_HISTORY_CHARS}字符`);
+      } else {
+        console.log(`📏 达字符预算 ${MAX_HISTORY_CHARS}，保留最新 ${trimmed.length} 条，丢弃更早的 ${i + 1} 条`);
+      }
       break;
     }
     trimmed.unshift(allEntries[i]);
     totalChars += entryLen;
   }
+
+
   
   historyText = trimmed.join("\n\n");
   console.log(`📊 最终使用 ${trimmed.length} 条记录，${historyText.length} 字符`);
