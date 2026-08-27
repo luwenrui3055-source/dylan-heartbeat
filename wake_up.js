@@ -586,10 +586,13 @@ async function runWakeUp() {
   // 优先使用 xiaoke 最新记录
 let historyText = "";
 
+// 字符预算兜底：防止历史过长撑爆模型上下文
+const MAX_HISTORY_CHARS = parseInt(process.env.MAX_HISTORY_CHARS) || 80000;
+
 if (xiaokeRecords.length > 0) {
   console.log("使用 xiaoke 记录，条数:", xiaokeRecords.length);
   
-  historyText = xiaokeRecords
+  const allEntries = xiaokeRecords
     .filter(record => record.role === "user" || record.role === "assistant")
     .slice().reverse()  // 按时间正序
     .map(record => {
@@ -597,10 +600,26 @@ if (xiaokeRecords.length > 0) {
       const content = normalizeContentToText(record.content).trim();
       return content ? `[${role}] ${content}` : "";
     })
-    .filter(Boolean)
-    .join("\n\n");
+    .filter(Boolean);
+  
+  // 从最新往老累加，超预算就停
+  const trimmed = [];
+  let totalChars = 0;
+  for (let i = allEntries.length - 1; i >= 0; i--) {
+    const entryLen = allEntries[i].length + 2;
+    if (totalChars + entryLen > MAX_HISTORY_CHARS) {
+      console.log(`📏 达字符预算 ${MAX_HISTORY_CHARS}，保留最新 ${trimmed.length} 条，丢弃更早的 ${i + 1} 条`);
+      break;
+    }
+    trimmed.unshift(allEntries[i]);
+    totalChars += entryLen;
+  }
+  
+  historyText = trimmed.join("\n\n");
+  console.log(`📊 最终使用 ${trimmed.length} 条记录，${historyText.length} 字符`);
 } else {
   console.log("xiaoke 记录为空，使用本地文件");
+
   
   // 保留原来的本地文件处理逻辑
   historyText = cleanMessages
