@@ -592,15 +592,26 @@ const MAX_HISTORY_CHARS = parseInt(process.env.MAX_HISTORY_CHARS) || 80000;
 if (xiaokeRecords.length > 0) {
   console.log("使用 xiaoke 记录，条数:", xiaokeRecords.length);
   
+  // 单条超过 10000 字符的视为异常数据，跳过
+  const MAX_SINGLE_ENTRY = parseInt(process.env.MAX_SINGLE_ENTRY) || 10000;
+
   const allEntries = xiaokeRecords
-    .filter(record => record.role === "user" || record.role === "assistant")
-    .slice().reverse()  // 按时间正序
-    .map(record => {
+    .filter(record => {
+      if (record.role !== "user" && record.role !== "assistant") return false;
+      const len = (record.content || '').length;
+      if (len > MAX_SINGLE_ENTRY) {
+        console.log(`⚠️ 跳过异常超长记录: role=${record.role}, ${len}字符`);
+        return false;
+      }
+      return true;
+    })
+    .slice().reverse().map(record => {
       const role = record.role === "user" ? "小猫" : "朔";
       const content = normalizeContentToText(record.content).trim();
       return content ? `[${role}] ${content}` : "";
     })
     .filter(Boolean);
+
   
   // 从最新往老累加，超预算就停
   const trimmed = [];
