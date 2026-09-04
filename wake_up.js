@@ -26,7 +26,7 @@ async function recordPushToTimeline(eventContent) {
   try {
     console.log("🔵 写入推送记录到 xiaoke");
     
-    const response = await fetch('https://saku-change.zeabur.app/internal/events', {
+    const response = await fetch('https://saku-xiaoke.zeabur.app/internal/events', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.XIAOKE_API_KEY}`,
@@ -405,7 +405,7 @@ function parseTimelineTimestamp(value) {
 }
 async function getXiaokeHistory(limit = 20) {
   try {
-    const response = await fetch('https://saku-change.zeabur.app/internal/timeline?limit=' + limit, {
+    const response = await fetch('https://saku-xiaoke.zeabur.app/internal/timeline?limit=' + limit, {
       headers: { 'Authorization': `Bearer ${process.env.XIAOKE_API_KEY}`}
     });
     
@@ -425,7 +425,7 @@ async function getLastUserTime(messages) {
   // 优先从 xiaoke API 获取
   try {
     console.log('📡 正在调用 xiaoke API...');
-    const xiaokeBase = process.env.XIAOKE_BASE_URL || 'https://saku-change.zeabur.app';
+    const xiaokeBase = process.env.XIAOKE_BASE_URL || 'https://saku-xiaoke.zeabur.app';
     const response = await fetch(`${xiaokeBase}/internal/timeline?limit=20`, {
       headers: { 'Authorization': `Bearer ${process.env.XIAOKE_API_KEY }` }
     });
